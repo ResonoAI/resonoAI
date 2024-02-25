@@ -38,7 +38,6 @@
             min-height: 200px;
         }
     </style>
-     
 </head>
 <body>
     <!-- Navbar Section -->
@@ -89,7 +88,11 @@
         <div id="output-container" class="output__container">
             <h2>Server Output</h2>
             <div id="output" class="output"></div>
-            <div id="captured-image-container"></div> <!-- Container for the captured image -->
+            <div id="captured-image-container">
+                <h2>Captured Image</h2>
+                <img id="captured-image" src="" alt="Captured Image">
+                <button id="download-btn" class="button">Download Image</button>
+            </div>
         </div>
     </div>
 
@@ -159,54 +162,84 @@
 
     <script src="app.js"></script>
     <script>
-    const video = document.getElementById('video');
-        const canvas = document.getElementById('canvas');
-        const captureButton = document.getElementById('capture-btn');
-        const outputDiv = document.getElementById('output');
-        const capturedImageContainer = document.getElementById('captured-image-container');
-        const constraints = {
-            video: true
-        };
+        // Function to handle capturing image and sending to Flask server
+        function captureAndSendImage() {
+            const video = document.getElementById('video');
+            const canvas = document.createElement('canvas');
+            const capturedImage = document.getElementById('captured-image');
+            const outputDiv = document.getElementById('output');
 
-        navigator.mediaDevices.getUserMedia(constraints)
-            .then((stream) => {
-                video.srcObject = stream;
-            })
-            .catch((error) => {
-                console.error('Error accessing the webcam: ', error);
-            });
-
-        captureButton.addEventListener('click', () => {
+            // Set canvas dimensions
             canvas.width = video.videoWidth;
             canvas.height = video.videoHeight;
+
+            // Draw video frame onto canvas
             canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+            
+            // Convert canvas content to base64 data URL
             const imageData = canvas.toDataURL('image/jpeg');
 
-            // Display captured image below the server output
-            const capturedImage = new Image();
+            // Update captured image source
             capturedImage.src = imageData;
-            capturedImageContainer.innerHTML = ''; // Clear previous captured image
-            capturedImageContainer.appendChild(capturedImage);
+
+            // Create FormData object
+            const formData = new FormData();
+            formData.append('image', imageData);
 
             // Send captured image data to Flask server
-            fetch("/capture", {  // This is where the Flask endpoint is being called
+            fetch("/capture", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ image: imageData }),
+                body: formData,
             })
             .then((response) => response.json())
             .then((data) => {
-                console.log("Image captured successfully");
-                // Update output div with the server response
+                // Display server response in output div
                 outputDiv.innerText = data.message;
             })
             .catch((error) => {
-                console.error("Error capturing image: ", error);
+                console.error("Error capturing and sending image: ", error);
             });
+        }
+
+        // Call captureAndSendImage function when capture button is clicked
+        document.getElementById('capture-btn').addEventListener('click', function() {
+            captureAndSendImage();
         });
+
+        // Function to handle downloading the captured image
+        function downloadImage() {
+            const capturedImage = document.getElementById('captured-image');
+            const imageSrc = capturedImage.src;
+
+            // Create a temporary anchor element
+            const link = document.createElement('a');
+            link.href = imageSrc;
+            link.download = 'captured_image.jpg';
+            document.body.appendChild(link);
+
+            // Simulate clicking the anchor element to trigger download
+            link.click();
+
+            // Remove the anchor element
+            document.body.removeChild(link);
+        }
+
+        // Call downloadImage function when download button is clicked
+        document.getElementById('download-btn').addEventListener('click', function() {
+            downloadImage();
+        });
+
+        // Initialize webcam stream when page loads
+        window.onload = function() {
+            const video = document.getElementById('video');
+            navigator.mediaDevices.getUserMedia({ video: true })
+                .then((stream) => {
+                    video.srcObject = stream;
+                })
+                .catch((error) => {
+                    console.error('Error accessing the webcam: ', error);
+                });
+        };
     </script>
-    
 </body>
 </html>
