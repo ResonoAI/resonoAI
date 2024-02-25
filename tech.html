@@ -56,13 +56,13 @@
                     </a>
                 </li>
                 <li class="navbar__item">
-                    <a href="/tech.html" class="navbar__links">
-                        Tech
+                    <a href="tech.html" class="navbar__links">
+                        Image Recognition
                     </a>
                 </li>
                 <li class="navbar__item">
-                    <a href="/" class="navbar__links">
-                        Products
+                    <a href="tech2.html" class="navbar__links">
+                        Call Analysis
                     </a>
                 </li>
                 <li class="navbar__btn">
@@ -85,16 +85,22 @@
             <canvas id="canvas" style="display:none;"></canvas>
         </div>
         
-        <div id="output-container" class="output__container">
-            <h2>Server Output</h2>
-            <div id="output" class="output"></div>
-            <div id="captured-image-container">
-                <h2>Captured Image</h2>
-                <img id="captured-image" src="" alt="Captured Image">
-                <button id="download-btn" class="button">Download Image</button>
-            </div>
-        </div>
+        <!-- Server Output Section -->
+<div id="output-container" class="output__container">
+    <h2>Server Output</h2>
+    <div id="output" class="output"></div>
+    <div id="upload-container">
+        <h2>Upload File</h2>
+        <input type="file" id="file-input" accept="image/*">
+        <button id="upload-btn" class="button">Upload</button>
     </div>
+    <div id="captured-image-container">
+        <h2>Captured Image</h2>
+        <img id="captured-image" src="" alt="Captured Image">
+        <button id="download-btn" class="button">Download Image</button>
+    </div>
+</div>
+</div>
 
     <!-- Footer Section -->
     <div class="footer__container">
@@ -185,20 +191,6 @@
             // Create FormData object
             const formData = new FormData();
             formData.append('image', imageData);
-
-            // Send captured image data to Flask server
-            fetch("/capture", {
-                method: "POST",
-                body: formData,
-            })
-            .then((response) => response.json())
-            .then((data) => {
-                // Display server response in output div
-                outputDiv.innerText = data.message;
-            })
-            .catch((error) => {
-                console.error("Error capturing and sending image: ", error);
-            });
         }
 
         // Call captureAndSendImage function when capture button is clicked
@@ -240,6 +232,49 @@
                     console.error('Error accessing the webcam: ', error);
                 });
         };
+    </script>
+    <script type="importmap">
+        {
+          "imports": {
+            "@google/generative-ai": "https://esm.run/@google/generative-ai"
+          }
+        }
+      </script>  
+    <script type = "module">
+        import { GoogleGenerativeAI } from "@google/generative-ai";
+        async function uploadAndInterpretFile() {
+            const fileInput = document.getElementById('file-input');
+            const outputDiv = document.getElementById('output');
+
+
+            try {
+                const genAI = new GoogleGenerativeAI("AIzaSyDKjcaRvFsETzC3x7LFp9Xr4e99o5C3igs");
+                const model = genAI.getGenerativeModel({ model: "gemini-pro-vision" });
+                const prompt = "What clues can you get from this Image that will help a 911 first responder?";
+                const imagePart = await fileToGenerativePart(fileInput.files[0]);
+                const result = await model.generateContent([prompt, imagePart]);
+                const response = await result.response;
+                const text = await response.text();
+                outputDiv.innerText = text;
+            } catch (error) {
+                outputDiv.innerText = "Error interpreting the uploaded file.";
+            }
+        }
+    
+        document.getElementById('upload-btn').addEventListener('click', function() {
+            uploadAndInterpretFile();
+        });
+    
+        async function fileToGenerativePart(file) {
+            const base64EncodedDataPromise = new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.readAsDataURL(file);
+            });
+            return {
+                inlineData: { data: await base64EncodedDataPromise, mimeType: file.type },
+            };
+        }
     </script>
 </body>
 </html>

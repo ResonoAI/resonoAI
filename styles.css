@@ -514,6 +514,29 @@
     margin: 40px auto 0 auto;
 }
 
+/* CSS for Creative Commons License */
+.cc-license {
+    font-size: 14px;
+    margin-top: 10px;
+    color: #ffffff;
+}
+
+.cc-license a {
+    text-decoration: none;
+    color: #ffffff;
+}
+
+.cc-license a:hover {
+    text-decoration: underline;
+    color: #ffffff;
+}
+
+.cc-license img {
+    height: 22px !important;
+    margin-left: 3px;
+    vertical-align: text-bottom;
+}
+
 .social__icons {
     display: flex;
     justify-content: space-between;
@@ -545,7 +568,7 @@
     #footer__logo {
         margin-bottom: 2rem;
     }
-
+ 
     .website__rights {
         margin-bottom: 2rem;
     }
